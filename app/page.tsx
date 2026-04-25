@@ -205,9 +205,9 @@ export default function Home() {
 
   const handleGetStarted = (planId: string) => {
     // Determine the base command depending on what category is currently viewed
-    let commandType = 'signal'; // Drop the slash since /start handles it
+    let commandType = 'signals'; // Drop the slash since /start handles it
     if (activeTab === 'chart') commandType = 'mentorship';
-    if (activeTab === 'signal') commandType = 'course';
+    if (activeTab === 'signal') commandType = 'courses';
 
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
       // Force the deep link to completely bypass the inline button restriction.
@@ -219,7 +219,7 @@ export default function Home() {
     } else {
       // Fallback for local browser debugging
       console.log(`[TMA hook triggered] Deep link executed: ${commandType} (${planId})`);
-      alert(`Simulated Deep Link executed!\nLink: https://t.me/agfxbot?start=${commandType}`);
+      alert(`Simulated Deep Link executed!\nLink: https://t.me/Agtradesdemo_bot?start=${commandType}`);
     }
   };
 
