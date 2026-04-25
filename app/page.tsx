@@ -9,6 +9,7 @@ declare global {
     Telegram?: {
       WebApp: {
         ready: () => void;
+        close: () => void;
         sendData: (data: string) => void;
         initDataUnsafe: {
           user?: {
@@ -46,7 +47,7 @@ const CheckIcon = ({ checked }: { checked: boolean }) => (
 const signalPlans = [
   {
     id: 'signal_scalper_x',
-    name: 'Scalper X',
+    name: 'VIP Signal 2.0',
     price: '$50.00',
     period: '/month',
     tagline: 'For high-frequency, low-latency traders',
@@ -75,8 +76,8 @@ const signalPlans = [
 const mentorshipPlans = [
   {
     id: 'mentor_basic',
-    name: 'Mentorship Basic',
-    price: '$150.00',
+    name: 'AG Trades beginners',
+    price: '$200.00',
     period: '/month',
     tagline: 'Learn the core strategies directly from top analysts.',
     features: [
@@ -88,7 +89,7 @@ const mentorshipPlans = [
   },
   {
     id: 'mentor_pro',
-    name: 'Mentorship Pro',
+    name: 'Ag Trades Pro',
     price: '$300.00',
     period: '/month',
     tagline: 'Direct 1-on-1 access and personalized strategy routing.',
@@ -97,6 +98,35 @@ const mentorshipPlans = [
       { label: 'Access to educational vault', checked: true },
       { label: 'Trade breakdown & reviews', checked: true },
       { label: '1-on-1 strategy coaching', checked: true },
+    ],
+  },
+];
+
+const coursePlans = [
+  {
+    id: 'course_beginner',
+    name: 'Ag Trades Recorded sessions',
+    price: '$150.00',
+    period: ' one-time',
+    tagline: 'A complete A-to-Z for Forex beginners.',
+    features: [
+      { label: '50+ Video Lessons', checked: true },
+      { label: 'Technical Analysis Basics', checked: true },
+      { label: 'Risk Management formulas', checked: true },
+      { label: 'Advanced SMC Concepts', checked: false },
+    ],
+  },
+  {
+    id: 'course_advanced',
+    name: 'Masterclass Course',
+    price: '$499.00',
+    period: ' one-time',
+    tagline: 'Deep dive into Institutional Trading & SMC.',
+    features: [
+      { label: '50+ Video Lessons', checked: true },
+      { label: 'Technical Analysis Basics', checked: true },
+      { label: 'Risk Management formulas', checked: true },
+      { label: 'Advanced SMC Concepts', checked: true },
     ],
   },
 ];
@@ -173,18 +203,42 @@ export default function Home() {
   }, []);
 
   const handleGetStarted = (planId: string) => {
+    // Determine the base command depending on what category is currently viewed
+    let commandType = '/signal';
+    if (activeTab === 'chart') commandType = '/mentorship';
+    if (activeTab === 'signal') commandType = '/course';
+
+    const commandPayload = `${commandType} ${planId}`;
+
+    // TMA Integration Hook
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-      const data = { action: 'start_subscription', plan_id: planId };
-      window.Telegram.WebApp.sendData(JSON.stringify(data));
+      // Send the payload to the bot
+      window.Telegram.WebApp.sendData(commandPayload);
+
+      // Immediately close the Mini App to kick the user back to the chat
+      window.Telegram.WebApp.close();
     } else {
-      console.log(`[TMA hook triggered] Subscribe to: ${planId}`);
-      alert(`Telegram WebApp hook triggered for plan: ${planId}.`);
+      // Fallback for local browser debugging
+      console.log(`[TMA hook triggered] Command sent: ${commandPayload}`);
+      alert(`Telegram WebApp closed. Sent internal command: ${commandPayload}`);
     }
   };
 
   const renderDashboard = () => {
+    // Determine which plans to show based on the active tab
     const isMentorshipView = activeTab === 'chart';
-    const activePlans = isMentorshipView ? mentorshipPlans : signalPlans;
+    const isCoursesView = activeTab === 'signal';
+
+    let activePlans = signalPlans;
+    let sectionTitle = 'Signal';
+
+    if (isMentorshipView) {
+      activePlans = mentorshipPlans;
+      sectionTitle = 'Mentorship';
+    } else if (isCoursesView) {
+      activePlans = coursePlans;
+      sectionTitle = 'Courses';
+    }
 
     return (
       <>
@@ -247,22 +301,30 @@ export default function Home() {
           <CandlestickChart />
         </div>
 
+        {/* Dynamic section indicator */}
         <div className="flex items-center justify-center gap-3 mt-6 animate-fade-in-up">
           <div
             className="flex items-center gap-2 px-[18px] py-[6px] rounded-full text-[13px] text-white font-medium shadow-[0_0_15px_rgba(30,100,140,0.4)]"
             style={{
-              background: isMentorshipView ? 'linear-gradient(90deg, #3b1830 0%, #401a30 100%)' : 'linear-gradient(90deg, #182830 0%, #1a3040 100%)',
-              border: isMentorshipView ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.08)',
+              background: isCoursesView
+                ? 'linear-gradient(90deg, #302010 0%, #402b15 100%)' // Orange/Gold for Courses
+                : isMentorshipView
+                  ? 'linear-gradient(90deg, #3b1830 0%, #401a30 100%)'
+                  : 'linear-gradient(90deg, #182830 0%, #1a3040 100%)',
+              border: '1px solid rgba(255,255,255,0.08)',
             }}
           >
-            <div className={`w-1.5 h-1.5 rounded-full ${isMentorshipView ? 'bg-[#d81b60] shadow-[0_0_8px_#d81b60]' : 'bg-[#06b6d4] shadow-[0_0_8px_#06b6d4]'}`} />
-            {isMentorshipView ? 'Mentorship' : 'Signal'}
-            <div className={`w-1.5 h-1.5 rounded-full ${isMentorshipView ? 'bg-[#d81b60] shadow-[0_0_8px_#d81b60]' : 'bg-[#06b6d4] shadow-[0_0_8px_#06b6d4]'}`} />
+            <div className={`w-1.5 h-1.5 rounded-full ${isCoursesView ? 'bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]' :
+              isMentorshipView ? 'bg-[#d81b60] shadow-[0_0_8px_#d81b60]' : 'bg-[#06b6d4] shadow-[0_0_8px_#06b6d4]'}`} />
+            {sectionTitle}
+            <div className={`w-1.5 h-1.5 rounded-full ${isCoursesView ? 'bg-[#f59e0b] shadow-[0_0_8px_#f59e0b]' :
+              isMentorshipView ? 'bg-[#d81b60] shadow-[0_0_8px_#d81b60]' : 'bg-[#06b6d4] shadow-[0_0_8px_#06b6d4]'}`} />
           </div>
         </div>
 
+        {/* Subscription cards — horizontal scrollable */}
         <div
-          key={isMentorshipView ? 'mentor' : 'signal'}
+          key={activeTab} // Force re-mount for animation transition
           className="mt-8 flex gap-4 overflow-x-auto animate-fade-in-up"
           style={{ paddingLeft: '24px', paddingRight: '24px', paddingBottom: '16px', scrollbarWidth: 'none' }}
         >
@@ -306,8 +368,16 @@ export default function Home() {
                   onClick={() => handleGetStarted(plan.id)}
                   className="w-full h-[52px] rounded-full font-medium text-white text-[15px] mt-10 active:scale-95 transition-transform"
                   style={{
-                    background: isFeatured ? (isMentorshipView ? 'linear-gradient(180deg, #ec4899 0%, #be185d 100%)' : 'linear-gradient(180deg, #38bdf8 0%, #0369a1 100%)') : '#1a1a1a',
-                    boxShadow: isFeatured ? (isMentorshipView ? '0 10px 25px -5px rgba(219, 39, 119, 0.4)' : '0 10px 25px -5px rgba(2, 132, 199, 0.4)') : 'none',
+                    background: isFeatured
+                      ? (isCoursesView ? 'linear-gradient(180deg, #f59e0b 0%, #b45309 100%)'
+                        : isMentorshipView ? 'linear-gradient(180deg, #ec4899 0%, #be185d 100%)'
+                          : 'linear-gradient(180deg, #38bdf8 0%, #0369a1 100%)')
+                      : '#1a1a1a',
+                    boxShadow: isFeatured
+                      ? (isCoursesView ? '0 10px 25px -5px rgba(245, 158, 11, 0.4)'
+                        : isMentorshipView ? '0 10px 25px -5px rgba(219, 39, 119, 0.4)'
+                          : '0 10px 25px -5px rgba(2, 132, 199, 0.4)')
+                      : 'none',
                   }}
                 >
                   Get Started
@@ -398,7 +468,7 @@ export default function Home() {
           }}
         >
           {navItems.map((item) => {
-            const isActive = activeTab === item.id || (item.id === 'overview' && ['overview', 'signal'].includes(activeTab));
+            const isActive = activeTab === item.id || (item.id === 'overview' && activeTab === 'overview');
             const showOverviewPill = item.id === 'overview' && isActive;
 
             return (
