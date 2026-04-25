@@ -11,6 +11,7 @@ declare global {
         ready: () => void;
         close: () => void;
         sendData: (data: string) => void;
+        openTelegramLink: (url: string) => void;
         initDataUnsafe: {
           user?: {
             id: number;
@@ -204,34 +205,21 @@ export default function Home() {
 
   const handleGetStarted = (planId: string) => {
     // Determine the base command depending on what category is currently viewed
-    let commandType = '/signal';
-    if (activeTab === 'chart') commandType = '/mentorship';
-    if (activeTab === 'signal') commandType = '/course';
-
-    // The user strictly requested ONLY the base command without the plan name
-    const commandPayload = commandType;
+    let commandType = 'signal'; // Drop the slash since /start handles it
+    if (activeTab === 'chart') commandType = 'mentorship';
+    if (activeTab === 'signal') commandType = 'course';
 
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+      // Force the deep link to completely bypass the inline button restriction.
+      // This will close the app, open the bot, and send a message like "/start signal"
+      const botUsername = "Agtradesdemo_bot"; // NOTE: Replace this if your actual Bot Username on Telegram is different!
+      const link = `https://t.me/${botUsername}?start=${commandType}`;
 
-      try {
-        // NOTE ON SEND_DATA:
-        // `sendData` ONLY works if the user opened the Mini App from a standard floating Keyboard Menu Button.
-        // If they opened the Mini App from an INLINE button attached to a message, `sendData` fails silently.
-
-        // sendData ALREADY CLOSES THE APP AUTOMATICALLY. Calling .close() immediately after breaks the event loop 
-        // and causes the payload to be lost before it reaches Telegram servers.
-        window.Telegram.WebApp.sendData(commandPayload);
-      } catch (err) {
-        console.error("sendData blocked by Telegram (likely opened via Inline Button).", err);
-        // Fallback for Inline Button launches: Deep Link into your Bot
-        // Uncomment the line below and replace YOUR_BOT_USERNAME with your actual bot handle:
-        // window.Telegram.WebApp.openTelegramLink(`https://t.me/YOUR_BOT_USERNAME?start=${planId}`);
-      }
-
+      window.Telegram.WebApp.openTelegramLink(link);
     } else {
       // Fallback for local browser debugging
-      console.log(`[TMA hook triggered] Command sent: ${commandPayload}`);
-      alert(`Telegram WebApp hook simulated. Payload sent: ${commandPayload}`);
+      console.log(`[TMA hook triggered] Deep link executed: ${commandType} (${planId})`);
+      alert(`Simulated Deep Link executed!\nLink: https://t.me/agfxbot?start=${commandType}`);
     }
   };
 
