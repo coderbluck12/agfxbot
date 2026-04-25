@@ -216,6 +216,11 @@ export default function Home() {
       const link = `https://t.me/${botUsername}?start=${commandType}`;
 
       window.Telegram.WebApp.openTelegramLink(link);
+
+      // Forcefully shut down the Mini App right after opening the link
+      setTimeout(() => {
+        window.Telegram?.WebApp?.close();
+      }, 100);
     } else {
       // Fallback for local browser debugging
       console.log(`[TMA hook triggered] Deep link executed: ${commandType} (${planId})`);
