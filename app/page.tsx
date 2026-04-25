@@ -208,9 +208,8 @@ export default function Home() {
     if (activeTab === 'chart') commandType = '/mentorship';
     if (activeTab === 'signal') commandType = '/course';
 
-    // Instead of spaces, let's use an underscore or a clean payload in case you use Deep Links
-    // For sendData, spaces are fine.
-    const commandPayload = `${commandType} ${planId}`;
+    // The user strictly requested ONLY the base command without the plan name
+    const commandPayload = commandType;
 
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
 
