@@ -208,19 +208,31 @@ export default function Home() {
     if (activeTab === 'chart') commandType = '/mentorship';
     if (activeTab === 'signal') commandType = '/course';
 
+    // Instead of spaces, let's use an underscore or a clean payload in case you use Deep Links
+    // For sendData, spaces are fine.
     const commandPayload = `${commandType} ${planId}`;
 
-    // TMA Integration Hook
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-      // Send the payload to the bot
-      window.Telegram.WebApp.sendData(commandPayload);
 
-      // Immediately close the Mini App to kick the user back to the chat
-      window.Telegram.WebApp.close();
+      try {
+        // NOTE ON SEND_DATA:
+        // `sendData` ONLY works if the user opened the Mini App from a standard floating Keyboard Menu Button.
+        // If they opened the Mini App from an INLINE button attached to a message, `sendData` fails silently.
+
+        // sendData ALREADY CLOSES THE APP AUTOMATICALLY. Calling .close() immediately after breaks the event loop 
+        // and causes the payload to be lost before it reaches Telegram servers.
+        window.Telegram.WebApp.sendData(commandPayload);
+      } catch (err) {
+        console.error("sendData blocked by Telegram (likely opened via Inline Button).", err);
+        // Fallback for Inline Button launches: Deep Link into your Bot
+        // Uncomment the line below and replace YOUR_BOT_USERNAME with your actual bot handle:
+        // window.Telegram.WebApp.openTelegramLink(`https://t.me/YOUR_BOT_USERNAME?start=${planId}`);
+      }
+
     } else {
       // Fallback for local browser debugging
       console.log(`[TMA hook triggered] Command sent: ${commandPayload}`);
-      alert(`Telegram WebApp closed. Sent internal command: ${commandPayload}`);
+      alert(`Telegram WebApp hook simulated. Payload sent: ${commandPayload}`);
     }
   };
 
